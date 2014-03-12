@@ -33,6 +33,7 @@
 #include <ump/ump_ref_drv.h>
 
 #include <sys/ioctl.h>
+#include <fcntl.h>
 
 #include "xorgVersion.h"
 #include "xf86_OSproc.h"
@@ -1076,7 +1077,8 @@ static unsigned long ump_get_size_from_secure_id(ump_secure_id secure_id)
 
 SunxiMaliDRI2 *SunxiMaliDRI2_Init(ScreenPtr pScreen,
                                   Bool      bUseOverlay,
-                                  Bool      bSwapbuffersWait)
+                                  Bool      bSwapbuffersWait,
+                                  char     *driPath)
 {
     int drm_fd;
     DRI2InfoRec info;
@@ -1091,10 +1093,19 @@ SunxiMaliDRI2 *SunxiMaliDRI2_Init(ScreenPtr pScreen,
 
     if (!xf86LoadSubModule(xf86Screens[pScreen->myNum], "dri2"))
         return NULL;
-
-    if ((drm_fd = drmOpen("mali_drm", NULL)) < 0) {
-        ErrorF("SunxiMaliDRI2_Init: drmOpen failed!\n");
-        return NULL;
+    if(driPath)
+    {
+        if ((drm_fd = open(driPath, O_RDWR, 0)) < 0) {
+            ErrorF("SunxiMaliDRI2_Init: drmOpen failed!\n");
+            return NULL;
+        }
+    }
+    else
+    {
+        if ((drm_fd = drmOpen("mali_drm", NULL)) < 0) {
+            ErrorF("SunxiMaliDRI2_Init: drmOpen failed!\n");
+            return NULL;
+        }
     }
 
     if (ump_open() != UMP_OK) {
